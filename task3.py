@@ -4,34 +4,27 @@ class FlatIterator:
         self.list_of_list = list_of_list
 
     def __iter__(self):
-        self.external_index = 0
-        self.internal_index = -1
-        self.index = 0
+        self.iters_stack = [iter(self.list_of_list)]
         return self
 
     def __next__(self):
-        self.internal_index += 1
-        if self.internal_index >= len(self.list_of_list[self.external_index]):
-            self.external_index += 1
-            self.internal_index = 0
-        self.elem = self.list_of_list[self.external_index][self.internal_index]
-        while isinstance(self.elem, list):
-            if len(self.elem) == 1:
-                self.elem = self.elem[0]
+        while self.iters_stack:
+            try:
+                next_item = next(self.iters_stack[-1])
+                #  пытаемся получить следующий элемент
+            except StopIteration:
+                self.iters_stack.pop()
+                #  если не получилось, значит итератор пустой
+                continue
+
+            if isinstance(next_item, list):
+                # если следующий элемент оказался списком, то
+                # добавляем его итератор в стек
+                self.iters_stack.append(iter(next_item))
+
             else:
-                while self.index < len(self.elem):
-                    if self.index == len(self.elem) - 1:
-                        self.internal_index += 1
-                        self.elem = self.elem[-1]
-                        self.index = 0
-                        return self.elem
-                    self.elem = self.elem[self.index]
-                    self.index += 1
-                    self.internal_index -= 1
-                    return self.elem
-        if self.external_index >= len(self.list_of_list):
-            raise StopIteration
-        return self.elem
+                return next_item
+        raise StopIteration
 
 
 list_of_lists_2 = [
@@ -40,6 +33,6 @@ list_of_lists_2 = [
     [1, 2, None, [[[[['!']]]]], []]
 ]
 
-# a = FlatIterator(list_of_lists_2)
-# for i in a:
-#     print(i)
+a = FlatIterator(list_of_lists_2)
+for i in a:
+    print(i)
